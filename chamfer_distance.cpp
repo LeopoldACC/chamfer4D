@@ -65,16 +65,18 @@ void nnsearch(
 {
     for (int i = 0; i < b; i++) {
         for (int j = 0; j < n; j++) {
-            const float x1 = xyz1[(i*n+j)*3+0];
-            const float y1 = xyz1[(i*n+j)*3+1];
-            const float z1 = xyz1[(i*n+j)*3+2];
+            const float x1 = xyz1[(i*n+j)*4+0];
+            const float y1 = xyz1[(i*n+j)*4+1];
+            const float z1 = xyz1[(i*n+j)*4+2];
+            const float b1 = xyz1[(i*n+j)*4+3];
             double best = 0;
             int besti = 0;
             for (int k = 0; k < m; k++) {
-                const float x2 = xyz2[(i*m+k)*3+0] - x1;
-                const float y2 = xyz2[(i*m+k)*3+1] - y1;
-                const float z2 = xyz2[(i*m+k)*3+2] - z1;
-                const double d=x2*x2+y2*y2+z2*z2;
+                const float x2 = xyz2[(i*m+k)*4+0] - x1;
+                const float y2 = xyz2[(i*m+k)*4+1] - y1;
+                const float z2 = xyz2[(i*m+k)*4+2] - z1;
+                const float b2 = xyz2[(i*m+k)*4+3] - b1;
+                const double d=x2*x2+y2*y2+z2*z2+b2*b2;
                 if (k==0 || d < best){
                     best = d;
                     besti = k;
@@ -134,44 +136,52 @@ void chamfer_distance_backward(
     const int* idx1_data = idx1.data<int>();
     const int* idx2_data = idx2.data<int>();
 
-    for (int i = 0; i < b*n*3; i++)
+    for (int i = 0; i < b*n*4; i++)
         gradxyz1_data[i] = 0;
-    for (int i = 0; i < b*m*3; i++)
+    for (int i = 0; i < b*m*4; i++)
         gradxyz2_data[i] = 0;
     for (int i = 0;i < b; i++) {
         for (int j = 0; j < n; j++) {
-            const float x1 = xyz1_data[(i*n+j)*3+0];
-            const float y1 = xyz1_data[(i*n+j)*3+1];
-            const float z1 = xyz1_data[(i*n+j)*3+2];
+            const float x1 = xyz1_data[(i*n+j)*4+0];
+            const float y1 = xyz1_data[(i*n+j)*4+1];
+            const float z1 = xyz1_data[(i*n+j)*4+2];
+            const float b1 = xyz1_data[(i*n+j)*4+3];
             const int j2 = idx1_data[i*n+j];
 
-            const float x2 = xyz2_data[(i*m+j2)*3+0];
-            const float y2 = xyz2_data[(i*m+j2)*3+1];
-            const float z2 = xyz2_data[(i*m+j2)*3+2];
+            const float x2 = xyz2_data[(i*m+j2)*4+0];
+            const float y2 = xyz2_data[(i*m+j2)*4+1];
+            const float z2 = xyz2_data[(i*m+j2)*4+2];
+            const float b2 = xyz2_data[(i*m+j2)*4+3];
             const float g = graddist1_data[i*n+j]*2;
 
-            gradxyz1_data[(i*n+j)*3+0] += g*(x1-x2);
-            gradxyz1_data[(i*n+j)*3+1] += g*(y1-y2);
-            gradxyz1_data[(i*n+j)*3+2] += g*(z1-z2);
-            gradxyz2_data[(i*m+j2)*3+0] -= (g*(x1-x2));
-            gradxyz2_data[(i*m+j2)*3+1] -= (g*(y1-y2));
-            gradxyz2_data[(i*m+j2)*3+2] -= (g*(z1-z2));
+            gradxyz1_data[(i*n+j)*4+0] += g*(x1-x2);
+            gradxyz1_data[(i*n+j)*4+1] += g*(y1-y2);
+            gradxyz1_data[(i*n+j)*4+2] += g*(z1-z2);
+            gradxyz1_data[(i*n+j)*4+3] += g*(b1-b2);
+            gradxyz2_data[(i*m+j2)*4+0] -= (g*(x1-x2));
+            gradxyz2_data[(i*m+j2)*4+1] -= (g*(y1-y2));
+            gradxyz2_data[(i*m+j2)*4+2] -= (g*(z1-z2));
+            gradxyz2_data[(i*m+j2)*4+3] -= (g*(b1-b2));
         }
         for (int j = 0; j < m; j++) {
-            const float x1 = xyz2_data[(i*m+j)*3+0];
-            const float y1 = xyz2_data[(i*m+j)*3+1];
-            const float z1 = xyz2_data[(i*m+j)*3+2];
+            const float x1 = xyz2_data[(i*m+j)*4+0];
+            const float y1 = xyz2_data[(i*m+j)*4+1];
+            const float z1 = xyz2_data[(i*m+j)*4+2];
+            const float b1 = xyz2_data[(i*m+j)*4+3];
             const int j2 = idx2_data[i*m+j];
-            const float x2 = xyz1_data[(i*n+j2)*3+0];
-            const float y2 = xyz1_data[(i*n+j2)*3+1];
-            const float z2 = xyz1_data[(i*n+j2)*3+2];
+            const float x2 = xyz1_data[(i*n+j2)*4+0];
+            const float y2 = xyz1_data[(i*n+j2)*4+1];
+            const float z2 = xyz1_data[(i*n+j2)*4+2];
+            const float b2 = xyz1_data[(i*n+j2)*4+3];
             const float g = graddist2_data[i*m+j]*2;
-            gradxyz2_data[(i*m+j)*3+0] += g*(x1-x2);
-            gradxyz2_data[(i*m+j)*3+1] += g*(y1-y2);
-            gradxyz2_data[(i*m+j)*3+2] += g*(z1-z2);
-            gradxyz1_data[(i*n+j2)*3+0] -= (g*(x1-x2));
-            gradxyz1_data[(i*n+j2)*3+1] -= (g*(y1-y2));
-            gradxyz1_data[(i*n+j2)*3+2] -= (g*(z1-z2));
+            gradxyz2_data[(i*m+j)*4+0] += g*(x1-x2);
+            gradxyz2_data[(i*m+j)*4+1] += g*(y1-y2);
+            gradxyz2_data[(i*m+j)*4+2] += g*(z1-z2);
+            gradxyz2_data[(i*m+j)*4+3] += g*(b1-b2);
+            gradxyz1_data[(i*n+j2)*4+0] -= (g*(x1-x2));
+            gradxyz1_data[(i*n+j2)*4+1] -= (g*(y1-y2));
+            gradxyz1_data[(i*n+j2)*4+2] -= (g*(z1-z2));
+            gradxyz1_data[(i*n+j2)*4+3] -= (g*(b1-b2));
         }
     }
 }
